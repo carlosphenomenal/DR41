@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: DR41
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
+
+server:
+  address: 127.0.0.1
+  port: 8765
+  shutdown: graceful
+
+app:
+  k6:
+    executable: ${K6_EXECUTABLE:k6}
+    work-directory: ${K6_WORK_DIRECTORY:${java.io.tmpdir}/DR41}
