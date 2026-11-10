@@ -1,15 +1,55 @@
 spring:
   application:
     name: DR41
+  threads:
+    virtual:
+      enabled: true            # request threads are virtual: cheap while waiting on I/O
   lifecycle:
-    timeout-per-shutdown-phase: 10s
+    timeout-per-shutdown-phase: 20s
+  servlet:
+    multipart:
+      max-file-size: 256KB
+      max-request-size: 300KB
+  main:
+    banner-mode: off
 
 server:
-  address: 127.0.0.1
+  address: 127.0.0.1           # the tool can hit arbitrary hosts: never expose it to the network
   port: 8765
   shutdown: graceful
 
 app:
   k6:
     executable: ${K6_EXECUTABLE:k6}
-    work-directory: ${K6_WORK_DIRECTORY:${java.io.tmpdir}/DR41}
+    min-version: 0.45.0
+    version-check-timeout: 5s
+    hard-timeout-grace: 60s
+    graceful-stop: 10s
+  limits:
+    max-concurrent-tests: 1    # concurrent runs skew each other's numbers; raise deliberately
+    max-queued-tests: 10
+    max-endpoints: 50
+    max-stages-per-endpoint: 50
+    max-virtual-users: 5000
+    max-total-duration: 6h
+    max-body-bytes: 1000000
+    max-plan-bytes: 262144
+    max-timeline-points: 1800
+    estimated-memory-per-vu-mb: 4
+    memory-headroom-ratio: 0.8
+  storage:
+    work-directory: ${DR41_WORK_DIR:}       # blank = <tmp>/DR41
+    reports-directory: ${DR41_REPORTS_DIR:} # blank = ~/.dr41/reports
+    max-finished-runs-in-memory: 50
+    report-retention: 7d
+  monitoring:
+    enabled: true
+    saturation-cpu-percent: 90
+  safety:
+    allowed-hosts: []          # empty = any host. e.g. [localhost, staging.example.com]
+    preflight-targets: true    # DNS + TCP probe before spending a test slot
+    connect-timeout: 3s
+
+logging:
+  level:
+    io.github.carlosphenomenal.dr41: INFO
